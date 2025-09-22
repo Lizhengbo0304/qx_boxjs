@@ -162,18 +162,18 @@ async function query() {
       const body = JSON.parse(resp.body);
       
       // 添加API响应调试信息
-      $.notify(
-        "[彩云天气] API响应调试",
-        "接口返回状态",
-        `状态: ${body.status || '未知'}\n` +
-        `API版本: v2.6\n` +
-        `响应大小: ${JSON.stringify(body).length} 字符\n` +
-        `预警数据: ${body.result && body.result.alert ? '存在' : '不存在'}\n` +
-        `实时数据: ${body.result && body.result.realtime ? '存在' : '不存在'}`
-      );
+    //   $.notify(
+    //     "[彩云天气] API响应调试",
+    //     "接口返回状态",
+    //     `状态: ${body.status || '未知'}\n` +
+    //     `API版本: v2.6\n` +
+    //     `响应大小: ${JSON.stringify(body).length} 字符\n` +
+    //     `预警数据: ${body.result && body.result.alert ? '存在' : '不存在'}\n` +
+    //     `实时数据: ${body.result && body.result.realtime ? '存在' : '不存在'}`
+    //   );
       
       // 如果需要查看完整响应，可以取消下面的注释
-      $.notify("[彩云天气] 完整API响应", "", JSON.stringify(body, null, 2).substring(0, 500) + "...");
+    //   $.notify("[彩云天气] 完整API响应", "", JSON.stringify(body, null, 2));
       
       if (body.status === "failed") {
         throw new Error(body.error);
