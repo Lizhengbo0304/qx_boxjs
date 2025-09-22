@@ -56,13 +56,13 @@
           "desc": "经度，可以关闭MITM获取位置，手动设置"
         }
       ],
-      "author": "@Peng-YM",
-      "repo": "https://github.com/Peng-YM/QuanX",
+      "author": "@lizhengbo",
+      "repo": "https://github.com/Lizhengbo0304/qx_boxjs",
       "icons": [
         "https://raw.githubusercontent.com/Orz-3/mini/master/caiyun.png",
         "https://raw.githubusercontent.com/Orz-3/task/master/caiyun.png"
       ],
-      "script": "https://raw.githubusercontent.com/Peng-YM/QuanX/master/Tasks/caiyun.js"
+      "script": "https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/caiyun.js"
     }
   ]
 }
