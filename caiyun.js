@@ -146,7 +146,7 @@ async function query() {
     );
   }
   // query API
-  const url = `https://api.caiyunapp.com/v2.5/${$.read("token").caiyun}/${$.read("location").longitude
+  const url = `https://api.caiyunapp.com/v2.6/${$.read("token").caiyun}/${$.read("location").longitude
     },${$.read("location").latitude
     }/weather?lang=zh_CN&dailystart=0&hourlysteps=384&dailysteps=16&alert=true`;
 
@@ -201,25 +201,39 @@ async function query() {
 }
 
 function weatherAlert() {
+  // 添加数据验证，防止undefined错误
+  if (!$.weather || !$.weather.result || !$.weather.result.alert) {
+    $.log("⚠️ 天气预警数据不存在，跳过预警检查");
+    return;
+  }
+  
   const data = $.weather.result.alert;
   const address = $.address;
   const alerted = $.read("alerted") || [];
 
-  if (data.status === "ok") {
-    data.content.forEach((alert) => {
-      if (alerted.indexOf(alert.alertId) === -1) {
-        $.notify(
-          `[彩云天气] ${address.city} ${address.district} ${address.street}`,
-          alert.title,
-          alert.description
-        );
-        alerted.push(alert.alertId);
-        if (alerted.length > 10) {
-          alerted.shift();
+  // 检查data是否存在且有status属性
+  if (data && data.status === "ok") {
+    // 确保content数组存在
+    if (data.content && Array.isArray(data.content)) {
+      data.content.forEach((alert) => {
+        if (alerted.indexOf(alert.alertId) === -1) {
+          $.notify(
+            `[彩云天气] ${address.city} ${address.district} ${address.street}`,
+            alert.title,
+            alert.description
+          );
+          alerted.push(alert.alertId);
+          if (alerted.length > 10) {
+            alerted.shift();
+          }
+          $.write(alerted, "alerted");
         }
-        $.write(alerted, "alerted");
-      }
-    });
+      });
+    } else {
+      $.log("⚠️ 预警内容数据格式异常");
+    }
+  } else {
+    $.log(`⚠️ 预警数据状态异常: ${data ? data.status : 'data为空'}`);
   }
 }
 
