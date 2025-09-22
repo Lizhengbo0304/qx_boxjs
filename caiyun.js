@@ -68,9 +68,22 @@ if (typeof $request !== "undefined") {
     latitude: res[1],
     longitude: res[2],
   };
-  if (!$.read("location")) {
+  
+  // 获取之前保存的位置信息
+  const oldLocation = $.read("location");
+  
+  // 检查位置是否发生变化
+  const locationChanged = !oldLocation || 
+    Math.abs(parseFloat(oldLocation.latitude) - parseFloat(location.latitude)) > 0.001 ||
+    Math.abs(parseFloat(oldLocation.longitude) - parseFloat(location.longitude)) > 0.001;
+  
+  if (!oldLocation) {
     $.notify("[彩云天气]", "", "🎉🎉🎉 获取定位成功。");
+  } else if (locationChanged) {
+    $.notify("[彩云天气]", "📍 位置已更新", 
+      `新位置：纬度 ${location.latitude}, 经度 ${location.longitude}`);
   }
+  
   if (display_location) {
     $.info(
       `成功获取当前位置：纬度 ${location.latitude} 经度 ${location.longitude}`
@@ -80,6 +93,7 @@ if (typeof $request !== "undefined") {
   $.write(res[1], "#latitude");
   $.write(res[2], "#longitude");
 
+  // 始终更新位置信息，实现实时定位
   $.write(location, "location");
   $.done({ body: $request.body });
 } else {
