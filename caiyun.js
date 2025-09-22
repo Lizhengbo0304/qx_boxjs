@@ -160,12 +160,34 @@ async function query() {
   })
     .then((resp) => {
       const body = JSON.parse(resp.body);
+      
+      // 添加API响应调试信息
+      $.notify(
+        "[彩云天气] API响应调试",
+        "接口返回状态",
+        `状态: ${body.status || '未知'}\n` +
+        `API版本: v2.6\n` +
+        `响应大小: ${JSON.stringify(body).length} 字符\n` +
+        `预警数据: ${body.result && body.result.alert ? '存在' : '不存在'}\n` +
+        `实时数据: ${body.result && body.result.realtime ? '存在' : '不存在'}`
+      );
+      
+      // 如果需要查看完整响应，可以取消下面的注释
+      // $.notify("[彩云天气] 完整API响应", "", JSON.stringify(body, null, 2).substring(0, 500) + "...");
+      
       if (body.status === "failed") {
         throw new Error(body.error);
       }
       return body;
     })
     .catch((err) => {
+      // 添加错误调试信息
+      $.notify(
+        "[彩云天气] API请求错误",
+        "请求失败",
+        `错误信息: ${err.message}\n` +
+        `请求URL: ${url.substring(0, 100)}...`
+      );
       throw err;
     });
   $.weather = weather;
@@ -241,9 +263,12 @@ function realtimeWeather() {
   const data = $.weather.result;
   const address = $.address;
 
+  // 添加数据验证，防止undefined错误
   const alert = data.alert;
-  const alertInfo =
-    alert.content.length == 0
+  let alertInfo = "";
+  
+  if (alert && alert.content && Array.isArray(alert.content)) {
+    alertInfo = alert.content.length == 0
       ? ""
       : alert.content.reduce((acc, curr) => {
         if (curr.status === "预警中") {
@@ -252,6 +277,10 @@ function realtimeWeather() {
           return acc;
         }
       }, "[预警]") + "\n\n";
+  } else {
+    $.log("⚠️ 预警数据不存在或格式异常");
+    alertInfo = "";
+  }
 
   const realtime = data.realtime;
   const keypoint = data.forecast_keypoint;
