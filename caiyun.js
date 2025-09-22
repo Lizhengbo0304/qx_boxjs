@@ -173,7 +173,7 @@ async function query() {
       );
       
       // 如果需要查看完整响应，可以取消下面的注释
-      // $.notify("[彩云天气] 完整API响应", "", JSON.stringify(body, null, 2).substring(0, 500) + "...");
+      $.notify("[彩云天气] 完整API响应", "", JSON.stringify(body, null, 2).substring(0, 500) + "...");
       
       if (body.status === "failed") {
         throw new Error(body.error);
