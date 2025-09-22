@@ -1,5 +1,5 @@
 /**
-彩云天气 v0.1 alpha
+彩云天气 v1.0 自用
 @author: lizhengbo
 更新地址：https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/caiyun.js
  *
