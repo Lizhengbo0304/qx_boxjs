@@ -11,9 +11,11 @@
 
 ^https:\/\/api\.account\.meitu\.com\/users\/show_current\.json url script-response-body https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/myxj.js
 ^https:\/\/api\.account\.meitu\.com\/common\/check_device_login_pwd_list url script-response-body https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/myxj.js
+^https:\/\/api\.beautymaster\.meiyan\.com\/users\/show_current\.json url script-response-body https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/myxj.js
+^https:\/\/api\.beautymaster\.meiyan\.com\/users\/update\.json url script-response-body https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/myxj.js
 
 [mitm] 
-hostname = api.account.meitu.com
+hostname = api.account.meitu.com, api.beautymaster.meiyan.com
 
 *******************************/
 
@@ -22,7 +24,7 @@ var objk = JSON.parse(body);
 var url = $request.url;
 
 // 判断API接口类型并返回对应的VIP数据
-if (url.indexOf("/users/show_current.json") !== -1) {
+if (url.indexOf("api.account.meitu.com/users/show_current.json") !== -1) {
     // 用户信息接口
     objk = {
         "meta": {
@@ -163,6 +165,140 @@ if (url.indexOf("/users/show_current.json") !== -1) {
                 "client_id": 1089867607
             }
         ]
+    };
+
+} else if (url.indexOf("api.beautymaster.meiyan.com/users/show_current.json") !== -1) {
+    // 美颜相机用户信息接口
+    objk = {
+        "meta": {
+            "code": 0,
+            "msg": "",
+            "request_uri": "/users/show_current",
+            "error": ""
+        },
+        "response": {
+            "need_phone": false,
+            "required_fields": [
+                "screen_name",
+                "gender",
+                "birthday",
+                "country"
+            ],
+            "show_user_info_form": true,
+            "status": 1,
+            "agreement_status": 1,
+            "agreement_platform": 0,
+            "expire_date": "2029-10-15",
+            "expire_time": "",
+            "period_type": 0,
+            "product_type": 0,
+            "permission": [],
+            "type": 0,
+            "ad_vip_type": 0,
+            "discount_status": 0,
+            "user": {
+                "id": 1941426628,
+                "status": 1,
+                "agreement_status": 1,
+                "agreement_platform": 0,
+                "expire_date": "2029-10-15",
+                "expire_time": "",
+                "period_type": 0,
+                "product_type": 0,
+                "permission": [],
+                "type": 0,
+                "ad_vip_type": 0,
+                "discount_status": 0,
+                "province_name": "山东",
+                "country_name": "中国",
+                "shape": -1,
+                "created_at": 1674393265,
+                "province": 370000,
+                "weight": 0,
+                "avatar": "https://maavatar1.meitudata.com/63cd36b7beb9e1539.jpg",
+                "birthday": "1992-10-06",
+                "city": 0,
+                "height": 0,
+                "phone_cc": 86,
+                "city_name": "",
+                "country": 100000,
+                "screen_name": "lizhengbo",
+                "vip": {
+                    "list": [
+                        {
+                            "status": 0,
+                            "app_id": 19,
+                            "icon": "https://account.meitu.com/static/image/meiyan.png"
+                        }
+                    ],
+                    "meiyan_vip": 0
+                },
+                "gender": ""
+            }
+        }
+    };
+
+} else if (url.indexOf("api.beautymaster.meiyan.com/users/update.json") !== -1) {
+    // 美颜相机用户更新接口
+    objk = {
+        "meta": {
+            "code": 0,
+            "msg": "",
+            "request_uri": "/users/update",
+            "error": ""
+        },
+        "response": {
+            "status": 1,
+            "agreement_status": 1,
+            "agreement_platform": 0,
+            "expire_date": "2029-10-15",
+            "expire_time": "",
+            "period_type": 0,
+            "product_type": 0,
+            "permission": [],
+            "type": 0,
+            "ad_vip_type": 0,
+            "discount_status": 0,
+            "user": {
+                "id": 1941426628,
+                "status": 1,
+                "agreement_status": 1,
+                "agreement_platform": 0,
+                "expire_date": "2029-10-15",
+                "expire_time": "",
+                "period_type": 0,
+                "product_type": 0,
+                "permission": [],
+                "type": 0,
+                "ad_vip_type": 0,
+                "discount_status": 0,
+                "province_name": "山东",
+                "country_name": "中国",
+                "shape": -1,
+                "created_at": 1674393265,
+                "province": 370000,
+                "weight": 0,
+                "avatar": "https://maavatar1.meitudata.com/63cd36b7beb9e1539.jpg",
+                "birthday": "1992-10-06",
+                "city": 0,
+                "height": 0,
+                "phone_cc": 86,
+                "city_name": "",
+                "country": 100000,
+                "screen_name": "lizhengbo",
+                "vip": {
+                    "list": [
+                        {
+                            "status": 0,
+                            "app_id": 19,
+                            "icon": "https://account.meitu.com/static/image/meiyan.png"
+                        }
+                    ],
+                    "meiyan_vip": 0
+                },
+                "gender": ""
+            }
+        }
     };
 }
 
