@@ -1,18 +1,15 @@
 /******************************
 
-½Å±¾¹¦ÄÜ£ºÃÀÑÕÏà»ú+½âËøVIP
-ÏÂÔØµØÖ·£ºhttp://mtw.so/6co6Pp
-Èí¼ş°æ±¾£º×îĞÂ°æ±¾
-½Å±¾×÷Õß£ºÅíÓÚêÌ
-¸üĞÂÊ±¼ä£º2024-12-19
-ÎÊÌâ·´À¡£ºQQ+89996462
-Ê¹ÓÃÉùÃ÷£º??´Ë½Å±¾½ö¹©Ñ§Ï°Óë½»Á÷£¬ÇëÎğ×ªÔØÓë··Âô£¡??????
-
+è„šæœ¬åŠŸèƒ½ï¼šç¾é¢œç›¸æœº+è§£é”VIP
+ä¸‹è½½åœ°å€ï¼šhttps://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/myxj.js
+è½¯ä»¶ç‰ˆæœ¬ï¼šæœ€æ–°ç‰ˆæœ¬
+è„šæœ¬ä½œè€…ï¼šlizhengbo
+æ›´æ–°æ—¶é—´ï¼š2025-09-26
 *******************************
 
 [rewrite_local]
 
-^https:\/\/api\.account\.meitu\.com\/users\/show_current\.json url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/myxj.js
+^https:\/\/api\.account\.meitu\.com\/users\/show_current\.json url script-response-body https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/myxj.js
 
 [mitm] 
 hostname = api.account.meitu.com
@@ -22,7 +19,7 @@ hostname = api.account.meitu.com
 var body = $response.body;
 var objk = JSON.parse(body);
 
-// ĞŞ¸Ä·µ»ØÊı¾İ£¬½âËøVIP¹¦ÄÜ
+// ä¿®æ”¹è¿”å›æ•°æ®ï¼Œè§£é”VIPåŠŸèƒ½
 objk = {
     "meta": {
         "code": 0,
@@ -35,16 +32,16 @@ objk = {
     "response": {
         "suggested_info": {
             "avatar_https": "https://maavatar1.meitudata.com/63cd36b7beb9e1539.jpg",
-            "province_name": "É½¶«",
-            "country_name": "ÖĞ¹ú",
+            "province_name": "å±±ä¸œ",
+            "country_name": "ä¸­å›½",
             "province": 370000,
             "avatar": "https://maavatar1.meitudata.com/63cd36b7beb9e1539.jpg",
-            "location": "ÖĞ¹ú É½¶«",
+            "location": "ä¸­å›½ å±±ä¸œ",
             "birthday": "1992-10-06",
             "city": 0,
             "city_name": "",
             "country": 100000,
-            "screen_name": "???",
+            "screen_name": "lizhengbo",
             "gender": ""
         },
         "need_phone": false,
@@ -59,11 +56,11 @@ objk = {
             "silent_login_status": 1,
             "country": 100000,
             "has_phone": true,
-            "location": "ÖĞ¹ú É½¶«",
+            "location": "ä¸­å›½ å±±ä¸œ",
             "has_assoc_phone": false,
             "description": "",
             "email_verified": false,
-            "country_name": "ÖĞ¹ú",
+            "country_name": "ä¸­å›½",
             "wallet_flag": {
                 "has_income": false,
                 "has_recharge": false
@@ -74,7 +71,7 @@ objk = {
                     "id": "oim5Qt3m2UBBCCd8jnwp3gqeUkYw",
                     "created_at": 1674393265,
                     "avatar_https": "https://thirdwx.qlogo.cn/mmopen/vi_32/pgQpy1FE8d7dRicuC7fOaNmvhZrVwuSuXPaEv8VzIwNL3HLnV2AxnlMsibGKRtl31ibQLnsy1EjGHnygSqH14H2FufV4W0xUDebEO8xAtVU4Fw/132",
-                    "screen_name": "ÀîÕı²©????",
+                    "screen_name": "lizhengbo",
                     "access_token": "001AUYFa1VtRlK07bhJa1oJnor0AUYFO",
                     "is_expired": false
                 }
@@ -89,9 +86,9 @@ objk = {
             "avatar": "https://maavatar1.meitudata.com/63cd36b7beb9e1539.jpg",
             "status": "8389376",
             "phone_cc": 86,
-            "screen_name": "???",
+            "screen_name": "lizhengbo",
             "province": 370000,
-            "province_name": "É½¶«",
+            "province_name": "å±±ä¸œ",
             "gender": "",
             "city_name": "",
             "assoc_phone_cc": 0,
