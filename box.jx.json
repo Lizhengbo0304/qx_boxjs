@@ -9,12 +9,7 @@
       "id": "Caiyun",
       "name": "彩云天气",
       "keys": [
-        "@caiyun.token.caiyun",
-        "@caiyun.token.tencent",
-        "@caiyun.display_location",
-        "@caiyun.location.latitude",
-        "@caiyun.location.longitude",
-        "@caiyun.address"
+        "@caiyun.token.caiyun"
       ],
       "settings": [
         {
@@ -24,36 +19,7 @@
           "type": "text",
           "autoGrow": false,
           "rows": 2,
-          "desc": "彩云天气的Token，可以自行申请或者前往频道获取"
-        },
-        {
-          "id": "@caiyun.token.tencent",
-          "name": "腾讯地图API Token",
-          "val": "AHEBZ-ASTWX-CIW4P-7TV7T-AWKLS-7CFWP",
-          "type": "text",
-          "rows": 1,
-          "desc": ""
-        },
-        {
-          "id": "@caiyun.display_location",
-          "name": "是否在日志中显示经纬度",
-          "val": false,
-          "type": "boolean",
-          "desc": ""
-        },
-        {
-          "id": "@caiyun.location.latitude",
-          "name": "纬度",
-          "val": null,
-          "type": "text",
-          "desc": "纬度，可以关闭MITM获取位置，手动设置"
-        },
-        {
-          "id": "@caiyun.location.longitude",
-          "name": "经度",
-          "val": null,
-          "type": "text",
-          "desc": "经度，可以关闭MITM获取位置，手动设置"
+          "desc": "彩云天气的Token，用于获取天气信息。脚本会自动监控高德API调用并获取位置信息。"
         }
       ],
       "author": "@lizhengbo",

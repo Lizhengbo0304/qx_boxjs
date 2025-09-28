@@ -1,10 +1,10 @@
 /**
-彩云天气 v1.0 自用
+彩云天气 v2.0 自用 - 自动触发版本
 @author: lizhengbo
 更新地址：https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/caiyun.js
  *
 功能：
-√ 自动定位
+√ 监控高德API自动获取位置
 √ 异常天气预警
 √ 实时天气预报
 
@@ -13,31 +13,28 @@ TODO:
 - 每日睡前预报
 
 配置：
-1️⃣ 配置自动定位
+1️⃣ 配置高德API监控
 根据平台添加如下配置
 (1). Quantumult X
 [MITM]
-hostname=weatherkit.apple.com, api.weather.com
+hostname=restapi.amap.com
 [rewrite_local]
-https:\/\/((weatherkit\.apple)|(api.weather))\.com url script-request-header https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/caiyun.js
+https:\/\/restapi\.amap\.com\/v3\/geocode\/geo url script-request-header https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/caiyun.js
 
 (2). Loon
 [MITM]
-hostname=weatherkit.apple.com, api.weather.com
+hostname=restapi.amap.com
 [Script]
-http-request https:\/\/((weatherkit\.apple)|(api.weather))\.com script-path=https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/caiyun.js, require-body=false
+http-request https:\/\/restapi\.amap\.com\/v3\/geocode\/geo script-path=https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/caiyun.js, require-body=false
 
 (3). Surge
 [MITM]
-hostname=weatherkit.apple.com, api.weather.com
+hostname=restapi.amap.com
 [Script]
-type=http-request, pattern=https:\/\/((weatherkit\.apple)|(api.weather))\.com, script-path=https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/caiyun.js, require-body=false
-2️⃣ 打开手机设置 > 隐私 > 定位服务
-(1) 打开定位服务
-(2) 选择天气，设置永远允许天气访问位置信息，并允许使用精确位置。
-此时，打开系统天气应用，会提示获取位置成功，如果没有提示，请确认1️⃣是否配置正确。
-3️⃣ 配置cron任务如：10 8-22/2 * * *
-4️⃣ 打开box.js设置彩云令牌(不是链接！！！）即可。
+type=http-request, pattern=https:\/\/restapi\.amap\.com\/v3\/geocode\/geo, script-path=https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/caiyun.js, require-body=false
+
+2️⃣ 打开box.js设置彩云令牌(不是链接！！！）即可。
+注意：此脚本会自动监控高德API调用，无需手动定时任务。
 */
 
 /********************** SCRIPT START *********************************/
@@ -52,209 +49,151 @@ if (display_location === undefined) {
 }
 
 if (typeof $request !== "undefined") {
-  // get location from request url
+  // 监控高德API接口调用
   const url = $request.url;
-  const res =
-    url.match(/weather\/.*?\/(.*)\/(.*)\?/) ||
-    url.match(/geocode\/([0-9.]*)\/([0-9.]*)\//) ||
-    url.match(/geocode=([0-9.]*),([0-9.]*)/) ||
-    url.match(/v2\/availability\/([0-9.]*)\/([0-9.]*)\//) ||
-    url.match(/v2\/weather\/.*?\/([0-9.-]+)\/([0-9.-]+)\?/);
-  if (res === null) {
-    $.info(`❌ 正则表达式匹配错误，🥬 无法从URL: ${url} 获取位置。`);
-    $.done({ body: $request.body });
-  }
-  const location = {
-    latitude: res[1],
-    longitude: res[2],
-  };
   
-  // 获取之前保存的位置信息
-  const oldLocation = $.read("location");
-  
-  // 检查位置是否发生变化
-  const locationChanged = !oldLocation || 
-    Math.abs(parseFloat(oldLocation.latitude) - parseFloat(location.latitude)) > 0.001 ||
-    Math.abs(parseFloat(oldLocation.longitude) - parseFloat(location.longitude)) > 0.001;
-  
-  if (!oldLocation) {
-    $.notify("[彩云天气]", "", "🎉🎉🎉 获取定位成功。");
-  } else if (locationChanged) {
-    $.notify("[彩云天气]", "📍 位置已更新", 
-      `新位置：纬度 ${location.latitude}, 经度 ${location.longitude}`);
+  // 检查是否是高德地理编码API
+  if (url.includes('restapi.amap.com/v3/geocode/geo')) {
+    $.info(`🔍 检测到高德API调用: ${url}`);
+    
+    // 异步处理API响应，获取经纬度并调用天气API
+    setTimeout(async () => {
+      try {
+        await processAmapResponse(url);
+      } catch (error) {
+        $.error(`处理高德API响应时出错: ${error.message}`);
+      }
+    }, 1000); // 延迟1秒确保API响应完成
   }
   
-  if (display_location) {
-    $.info(
-      `成功获取当前位置：纬度 ${location.latitude} 经度 ${location.longitude}`
-    );
-  }
-
-  $.write(res[1], "#latitude");
-  $.write(res[2], "#longitude");
-
-  // 始终更新位置信息，实现实时定位
-  $.write(location, "location");
   $.done({ body: $request.body });
 } else {
-  // this is a task
-  !(async () => {
-    const { caiyun, tencent } = $.read("token") || {};
+  // 非请求模式，检查配置
+  const token = $.read('token');
+  if (!token || !token.caiyun) {
+    $.notify('[彩云天气]', '❌ 配置错误', '请在BoxJS中配置彩云天气API Token');
+  } else {
+    $.log('✅ 彩云天气配置正常，等待高德API调用触发');
+  }
+  $.done();
+}
 
-    if (!caiyun) {
-      throw new ERR.TokenError("❌ 未找到彩云Token令牌");
-    } else if (caiyun.indexOf("http") !== -1) {
-      throw new ERR.TokenError("❌ Token令牌 并不是 一个链接！");
-    } else if (!tencent) {
-      throw new ERR.TokenError("❌ 未找到腾讯地图Token令牌");
-    } else if (!$.read("location")) {
-      // no location
-      $.notify(
-        "[彩云天气]",
-        "❌ 未找到定位",
-        "🤖 您可能没有正确设置MITM，请检查重写是否成功。"
-      );
-    } else {
-      await scheduler();
+// 处理高德API响应，提取经纬度并获取天气信息
+async function processAmapResponse(url) {
+  try {
+    // 从URL中提取address参数
+    const addressMatch = url.match(/address=([^&]+)/);
+    if (!addressMatch) {
+      $.error('❌ 无法从URL中提取地址参数');
+      return;
     }
-  })()
-    .catch((err) => {
-      if (err instanceof ERR.TokenError)
-        $.notify(
-          "[彩云天气]",
-          err.message,
-          "🤖 由于API Token具有时效性，请前往\nhttps://t.me/cool_scripts\n获取最新Token。",
-          {
-            "open-url": "https://t.me/cool_scripts",
-          }
-        );
-      else $.notify("[彩云天气]", "❌ 出现错误", JSON.stringify(err, Object.getOwnPropertyNames(err)));
-    })
-    .finally(() => $.done());
-}
-
-async function scheduler() {
-  const now = new Date();
-  $.log(
-    `Scheduler activated at ${now.getMonth() + 1
-    }月${now.getDate()}日${now.getHours()}时${now.getMinutes()}分`
-  );
-  await query();
-  weatherAlert();
-  realtimeWeather();
-  // hourlyForcast();
-  // dailyForcast();
-}
-
-async function query() {
-  const location = $.read("location") || {};
-  $.info(location);
-  const isNumeric = (input) => input && !isNaN(input);
-  if (!isNumeric(location.latitude) || !isNumeric(location.longitude)) {
-    throw new Error("❌ 经纬度设置错误！");
-  }
-
-  if (Number(location.latitude) > 90 || Number(location.longitude) > 180) {
-    throw new Error(
-      "🤖 地理小课堂：经度的范围是0~180，纬度是0~90哦。请仔细检查经纬度是否设置正确。"
-    );
-  }
-  // query API
-  const url = `https://api.caiyunapp.com/v2.6/${$.read("token").caiyun}/${$.read("location").longitude
-    },${$.read("location").latitude
-    }/weather?lang=zh_CN&dailystart=0&hourlysteps=384&dailysteps=16&alert=true`;
-
-  $.log("Query weather...");
-
-  const weather = await $.http.get({
-    url,
-    headers: {
-      "User-Agent": "ColorfulCloudsPro/5.0.10 (iPhone; iOS 14.0; Scale/3.00)",
-    },
-  })
-    .then((resp) => {
-      const body = JSON.parse(resp.body);
-      
-      // 添加API响应调试信息
-    //   $.notify(
-    //     "[彩云天气] API响应调试",
-    //     "接口返回状态",
-    //     `状态: ${body.status || '未知'}\n` +
-    //     `API版本: v2.6\n` +
-    //     `响应大小: ${JSON.stringify(body).length} 字符\n` +
-    //     `预警数据: ${body.result && body.result.alert ? '存在' : '不存在'}\n` +
-    //     `实时数据: ${body.result && body.result.realtime ? '存在' : '不存在'}`
-    //   );
-      
-      // 如果需要查看完整响应，可以取消下面的注释
-    //   $.notify("[彩云天气] 完整API响应", "", JSON.stringify(body, null, 2));
-      
-      if (body.status === "failed") {
-        throw new Error(body.error);
+    
+    const address = decodeURIComponent(addressMatch[1]);
+    $.info(`📍 检测到地址查询: ${address}`);
+    
+    // 调用高德API获取经纬度
+    const amapResponse = await $.http.get({
+      url: url,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15'
       }
-      return body;
-    })
-    .catch((err) => {
-      // 添加错误调试信息
-      $.notify(
-        "[彩云天气] API请求错误",
-        "请求失败",
-        `错误信息: ${err.message}\n` +
-        `请求URL: ${url.substring(0, 100)}...`
-      );
-      throw err;
     });
-  $.weather = weather;
-
-  const now = new Date().getTime();
-  const addressUpdated = $.read("address_updated");
-  let address = $.read("address");
-  if (addressUpdated === undefined || now - addressUpdated > 30 * 60 * 1000) {
-    await $.wait(Math.random() * 2000);
-    $.log("Query location...");
-    address = await $.http.get(
-      `https://apis.map.qq.com/ws/geocoder/v1/?key=${$.read("token").tencent
-      }&location=${$.read("location").latitude},${$.read("location").longitude}`
-    )
-      .then((resp) => {
-        const body = JSON.parse(resp.body);
-        if (body.status !== 0) {
-          throw new ERR.TokenError("❌ 腾讯地图Token错误");
-        }
-        return body.result.address_component;
-      })
-      .catch((err) => {
-        throw err;
-      });
-    $.write(address, "address");
-    $.write(now, "address_updated");
+    
+    const amapData = JSON.parse(amapResponse.body);
+    
+    if (amapData.status !== '1' || !amapData.geocodes || amapData.geocodes.length === 0) {
+      $.error('❌ 高德API返回数据异常');
+      return;
+    }
+    
+    const geocode = amapData.geocodes[0];
+    const location = geocode.location.split(',');
+    const longitude = parseFloat(location[0]);
+    const latitude = parseFloat(location[1]);
+    const formatted_address = geocode.formatted_address;
+    
+    $.info(`✅ 获取到坐标: 经度${longitude}, 纬度${latitude}`);
+    $.info(`📍 详细地址: ${formatted_address}`);
+    
+    // 检查彩云Token
+    const token = $.read('token');
+    if (!token || !token.caiyun) {
+      $.notify('[彩云天气]', '❌ 未配置彩云Token', '请在BoxJS中配置彩云天气API Token');
+      return;
+    }
+    
+    // 调用彩云天气API
+    await getWeatherInfo(longitude, latitude, formatted_address, token.caiyun);
+    
+  } catch (error) {
+    $.error(`处理高德API响应失败: ${error.message}`);
   }
-
-  if (display_location == true) {
-    $.info(JSON.stringify(address));
-  }
-  $.address = address;
 }
 
-function weatherAlert() {
+// 获取天气信息
+async function getWeatherInfo(longitude, latitude, address, caiyunToken) {
+  try {
+    const url = `https://api.caiyunapp.com/v2.6/${caiyunToken}/${longitude},${latitude}/weather?lang=zh_CN&dailystart=0&hourlysteps=384&dailysteps=16&alert=true`;
+    
+    $.info('🌤 正在获取天气信息...');
+    
+    const weather = await $.http.get({
+      url,
+      headers: {
+        'User-Agent': 'ColorfulCloudsPro/5.0.10 (iPhone; iOS 14.0; Scale/3.00)',
+      },
+    });
+    
+    const weatherData = JSON.parse(weather.body);
+    
+    if (weatherData.status === 'failed') {
+      throw new Error(weatherData.error);
+    }
+    
+    // 处理天气数据并发送通知
+    await processWeatherData(weatherData, address);
+    
+  } catch (error) {
+    $.error(`获取天气信息失败: ${error.message}`);
+    $.notify('[彩云天气]', '❌ 获取天气失败', error.message);
+  }
+}
+
+// 处理天气数据并发送通知
+async function processWeatherData(weatherData, address) {
+  try {
+    // 处理天气预警
+    processWeatherAlert(weatherData.result.alert, address);
+    
+    // 发送实时天气通知
+    sendRealtimeWeatherNotification(weatherData.result, address);
+    
+  } catch (error) {
+    $.error(`处理天气数据失败: ${error.message}`);
+  }
+}
+
+// 已移除scheduler函数，现在使用自动触发模式
+
+// 已移除原有的query函数，现在使用processAmapResponse和getWeatherInfo替代
+
+function processWeatherAlert(alertData, address) {
   // 添加数据验证，防止undefined错误
-  if (!$.weather || !$.weather.result || !$.weather.result.alert) {
+  if (!alertData) {
     $.log("⚠️ 天气预警数据不存在，跳过预警检查");
     return;
   }
   
-  const data = $.weather.result.alert;
-  const address = $.address;
   const alerted = $.read("alerted") || [];
 
   // 检查data是否存在且有status属性
-  if (data && data.status === "ok") {
+  if (alertData && alertData.status === "ok") {
     // 确保content数组存在
-    if (data.content && Array.isArray(data.content)) {
-      data.content.forEach((alert) => {
+    if (alertData.content && Array.isArray(alertData.content)) {
+      alertData.content.forEach((alert) => {
         if (alerted.indexOf(alert.alertId) === -1) {
           $.notify(
-            `[彩云天气] ${address.city} ${address.district} ${address.street}`,
+            `[彩云天气] ${address}`,
             alert.title,
             alert.description
           );
@@ -269,14 +208,11 @@ function weatherAlert() {
       $.log("⚠️ 预警内容数据格式异常");
     }
   } else {
-    $.log(`⚠️ 预警数据状态异常: ${data ? data.status : 'data为空'}`);
+    $.log(`⚠️ 预警数据状态异常: ${alertData ? alertData.status : 'data为空'}`);
   }
 }
 
-function realtimeWeather() {
-  const data = $.weather.result;
-  const address = $.address;
-
+function sendRealtimeWeatherNotification(data, address) {
   // 添加数据验证，防止undefined错误
   const alert = data.alert;
   let alertInfo = "";
@@ -298,7 +234,6 @@ function realtimeWeather() {
 
   const realtime = data.realtime;
   const keypoint = data.forecast_keypoint;
-
   const hourly = data.hourly;
 
   let hourlySkycon = "[未来3小时]\n";
@@ -313,19 +248,9 @@ function realtimeWeather() {
   }
 
   $.notify(
-    `[彩云天气] ${address.city} ${address.district} ${address.street}`,
-    `${mapSkycon(realtime.skycon)[0]} ${realtime.temperature} ℃  🌤 空气质量 ${realtime.air_quality.description.chn
-    }`,
-    `🔱 ${keypoint}
-🌡 体感${realtime.life_index.comfort.desc} ${realtime.apparent_temperature
-    } ℃  💧 湿度 ${(realtime.humidity * 100).toFixed(0)}%
-🌞 紫外线 ${realtime.life_index.ultraviolet.desc} 💨 ${mapWind(
-      realtime.wind.speed,
-      realtime.wind.direction
-    )}
-
-${alertInfo}${hourlySkycon}
-`,
+    `[彩云天气] ${address}`,
+    `${mapSkycon(realtime.skycon)[0]} ${realtime.temperature} ℃  🌤 空气质量 ${realtime.air_quality.description.chn}`,
+    `🔱 ${keypoint}\n🌡 体感${realtime.life_index.comfort.desc} ${realtime.apparent_temperature} ℃  💧 湿度 ${(realtime.humidity * 100).toFixed(0)}%\n🌞 紫外线 ${realtime.life_index.ultraviolet.desc} 💨 ${mapWind(realtime.wind.speed, realtime.wind.direction)}\n\n${alertInfo}${hourlySkycon}\n`,
     {
       "media-url": `${mapSkycon(realtime.skycon)[1]}`,
     }
