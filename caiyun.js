@@ -54,14 +54,14 @@ if (typeof $request !== "undefined") {
   
   // 检查是否是高德地理编码API
   if (url.includes('restapi.amap.com/v3/geocode/geo')) {
-    $.notify(`🔍 检测到高德API调用: ${url}`);
+    $.log(`🔍 检测到高德API调用: ${url}`);
     
     // 同步处理API响应，获取经纬度并调用天气API
     (async () => {
       try {
         await processAmapResponse(url);
       } catch (error) {
-        $.notify(`处理高德API响应时出错: ${error.message}`);
+        $.error(`处理高德API响应时出错: ${error.message}`);
       }
       $.done({ body: $request.body });
     })();
@@ -86,12 +86,12 @@ async function processAmapResponse(url) {
     // 从URL中提取address参数
     const addressMatch = url.match(/address=([^&]+)/);
     if (!addressMatch) {
-      $.notify('❌ 无法从URL中提取地址参数');
+      $.error('❌ 无法从URL中提取地址参数');
       return;
     }
     
     const address = decodeURIComponent(addressMatch[1]);
-    $.notify(`📍 检测到地址查询: ${address}`);
+    $.log(`📍 检测到地址查询: ${address}`);
     
     // 调用高德API获取经纬度
     const amapResponse = await $.http.get({
@@ -104,7 +104,7 @@ async function processAmapResponse(url) {
     const amapData = JSON.parse(amapResponse.body);
     
     if (amapData.status !== '1' || !amapData.geocodes || amapData.geocodes.length === 0) {
-      $.notify('❌ 高德API返回数据异常');
+      $.error('❌ 高德API返回数据异常');
       return;
     }
     
@@ -114,8 +114,8 @@ async function processAmapResponse(url) {
     const latitude = parseFloat(location[1]);
     const formatted_address = geocode.formatted_address;
     
-    $.notify(`✅ 获取到坐标: 经度${longitude}, 纬度${latitude}`);
-    $.notify(`📍 详细地址: ${formatted_address}`);
+    $.log(`✅ 获取到坐标: 经度${longitude}, 纬度${latitude}`);
+    $.log(`📍 详细地址: ${formatted_address}`);
     
     // 检查彩云Token
     const token = $.read('token');
@@ -128,7 +128,7 @@ async function processAmapResponse(url) {
     await getWeatherInfo(longitude, latitude, formatted_address, token.caiyun);
     
   } catch (error) {
-    $.notify(`处理高德API响应失败: ${error.message}`);
+    $.error(`处理高德API响应失败: ${error.message}`);
   }
 }
 
@@ -137,7 +137,7 @@ async function getWeatherInfo(longitude, latitude, address, caiyunToken) {
   try {
     const url = `https://api.caiyunapp.com/v2.6/${caiyunToken}/${longitude},${latitude}/weather?lang=zh_CN&dailystart=0&hourlysteps=384&dailysteps=16&alert=true`;
     
-    $.notify('🌤 正在获取天气信息...');
+    $.log('🌤 正在获取天气信息...');
     
     const weather = await $.http.get({
       url,
@@ -156,7 +156,7 @@ async function getWeatherInfo(longitude, latitude, address, caiyunToken) {
     await processWeatherData(weatherData, address);
     
   } catch (error) {
-    $.notify(`获取天气信息失败: ${error.message}`);
+    $.error(`获取天气信息失败: ${error.message}`);
     $.notify('[彩云天气]', '❌ 获取天气失败', error.message);
   }
 }
@@ -171,7 +171,7 @@ async function processWeatherData(weatherData, address) {
     sendRealtimeWeatherNotification(weatherData.result, address);
     
   } catch (error) {
-    $.notify(`处理天气数据失败: ${error.message}`);
+    $.error(`处理天气数据失败: ${error.message}`);
   }
 }
 
