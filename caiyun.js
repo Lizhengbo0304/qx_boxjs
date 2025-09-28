@@ -56,14 +56,16 @@ if (typeof $request !== "undefined") {
   if (url.includes('restapi.amap.com/v3/geocode/geo')) {
     $.notify(`🔍 检测到高德API调用: ${url}`);
     
-    // 异步处理API响应，获取经纬度并调用天气API
-    setTimeout(async () => {
+    // 同步处理API响应，获取经纬度并调用天气API
+    (async () => {
       try {
         await processAmapResponse(url);
       } catch (error) {
         $.notify(`处理高德API响应时出错: ${error.message}`);
       }
-    }, 1000); // 延迟1秒确保API响应完成
+      $.done({ body: $request.body });
+    })();
+    return; // 防止重复调用$.done()
   }
   
   $.done({ body: $request.body });
