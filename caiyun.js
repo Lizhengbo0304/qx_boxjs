@@ -41,13 +41,6 @@ type=http-request, pattern=https:\/\/restapi\.amap\.com\/v3\/geocode\/geo, scrip
 const $ = API("caiyun");
 const ERR = MYERR();
 
-let display_location = $.read("display_location");
-if (display_location === undefined) {
-  display_location = false;
-} else {
-  display_location = JSON.parse(display_location);
-}
-
 if (typeof $request !== "undefined") {
   // 监控高德API接口调用
   const url = $request.url;
@@ -175,10 +168,6 @@ async function processWeatherData(weatherData, address) {
   }
 }
 
-// 已移除scheduler函数，现在使用自动触发模式
-
-// 已移除原有的query函数，现在使用processAmapResponse和getWeatherInfo替代
-
 function processWeatherAlert(alertData, address) {
   // 添加数据验证，防止undefined错误
   if (!alertData) {
@@ -258,8 +247,6 @@ function sendRealtimeWeatherNotification(data, address) {
     }
   );
 }
-
-function dailyForcast() { }
 
 /************************** 天气对照表 *********************************/
 
@@ -462,8 +449,6 @@ function mapPrecipitation(intensity) {
     return "STORM";
   }
 }
-
-function mapIntensity(breakpoints) { }
 
 /************************** ERROR *********************************/
 function MYERR() {
