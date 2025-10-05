@@ -4,8 +4,8 @@
  * 
  * 使用方法：
  * 1. 在QuantumultX配置文件中添加以下重写规则：
- *    ^https://api\.heylumi\.cn/note/note-api/settings/profile/get url script-response-body https://raw.githubusercontent.com/your-repo/咔皮记账.js
- *    ^https://api\.heylumi\.cn/note/note-api/common/app/config/list url script-response-body https://raw.githubusercontent.com/your-repo/咔皮记账.js
+ *    ^https://api\.heylumi\.cn/note/note-api/settings/profile/get url script-response-body https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/kapi-accounting.js
+ *    ^https://api\.heylumi\.cn/note/note-api/common/app/config/list url script-response-body https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/kapi-accounting.js
  * 
  * 2. 在[mitm]部分添加：
  *    hostname = api.heylumi.cn
