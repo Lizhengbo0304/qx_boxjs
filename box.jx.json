@@ -29,6 +29,44 @@
         "https://raw.githubusercontent.com/Orz-3/task/master/caiyun.png"
       ],
       "script": "https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/caiyun.js"
+    },
+    {
+      "id": "Zhuzher",
+      "name": "住这儿助手",
+      "keys": [
+        "zhuzher_access_token",
+        "zhuzher_refresh_token",
+        "zhuzher_user_id"
+      ],
+      "settings": [
+        {
+          "id": "zhuzher_access_token",
+          "name": "住这儿访问令牌",
+          "val": "",
+          "type": "text",
+          "desc": "住这儿APP accessToken（自动获取，无需手动填写）"
+        },
+        {
+          "id": "zhuzher_refresh_token",
+          "name": "住这儿刷新令牌",
+          "val": "",
+          "type": "text",
+          "desc": "住这儿APP refreshToken（自动获取，无需手动填写）"
+        },
+        {
+          "id": "zhuzher_user_id",
+          "name": "住这儿用户ID",
+          "val": "",
+          "type": "text",
+          "desc": "住这儿APP用户ID（自动获取，无需手动填写）"
+        }
+      ],
+      "author": "@lizhengbo",
+      "repo": "https://github.com/Lizhengbo0304/qx_boxjs",
+      "icons": [
+        "https://raw.githubusercontent.com/Orz-3/mini/master/Color/zhuzher.png"
+      ],
+      "script": "https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/zhuzher-open-door.js"
     }
   ]
 }
