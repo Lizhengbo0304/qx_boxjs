@@ -2,6 +2,13 @@
  * 住这儿APP自动开门脚本（QuantumultX）
  * 支持：外部传入 deviceName，自动匹配 deviceCode；自动刷新token；统一API封装
  * 运行方式：手动执行/定时任务
+ *
+ * 日志增强版：
+ * - 关键步骤详细日志
+ * - 设备匹配过程日志
+ * - Token状态与刷新流程日志（敏感信息打码）
+ * - API请求/响应日志（包含耗时）
+ * - 错误处理日志与总耗时统计
  */
 
 const $ = API("zhuzher-open");
@@ -27,114 +34,229 @@ const DEVICE_MAP = [
 const CONFIG = {
   tokenRefreshApi: "https://api.5th.zone/auth/v3/external/oauth/accessToken",
   openDoorApi: "https://api.5th.zone/p/chaos/fd/api/entrance/v1/easygo/open",
-  headers: {  }
+  headers: {
+    Host: "api.5th.zone",
+    "Zhuzher-Project-Code": "37010105",
+    "Content-Type": "application/json",
+    Accept: "*/*",
+    "Zhuzher-Street-Code": "370102016000",
+    "X-Version": "6.0.10",
+    "Accept-Language": "zh-Hans-CN;q=1, en-CN;q=0.9",
+    "X-API-Version": "20251030",
+    "Accept-Encoding": "gzip, deflate, br",
+    "User-Agent": "VKProprietorAssistant/6.0.10 (iPhone; iOS 18.7.1; Scale/3.00)",
+    "X-Device-ID": "41052EC8-CAD1-47AB-9D43-BC1043267157",
+    "X-Platform": "iOS",
+    Connection: "keep-alive",
+    "X-channel": "zhuzher",
+    "Zhuzher-Project-Role": "6",
+  },
 };
 
-(async () => {
-  try {
-    $.info("🚪 开始住这儿自动开门");
+(function main() {
+  const scriptStart = Date.now();
+  $.info("================== 开门脚本启动 ==================");
+  $.info(`环境: QX=${ENV().isQX} Loon=${ENV().isLoon} Surge=${ENV().isSurge}`);
+  
+  (async () => {
+    try {
+      $.info("🚪 开始住这儿自动开门流程");
 
-    // 1) 支持外部传入 deviceName：从URL或$arguments中读取
-    const deviceName = getArg("deviceName");
-    $.info(`设备名称: ${deviceName || "未提供"}`);
+      // 1) 支持外部传入 deviceName：从URL或$arguments中读取
+      const deviceName = getArg("deviceName");
+      $.info(`步骤1: 读取设备名称 deviceName=${deviceName ?? "<未提供>"}`);
 
-    // 2) 匹配 deviceCode（不存BoxJS）
-    const deviceCode = mapDevice(deviceName);
-    if (!deviceCode) throw new Error(`未找到设备名称对应的deviceCode: ${deviceName}`);
+      // 2) 匹配 deviceCode（不存BoxJS）
+      const deviceCode = mapDevice(deviceName);
+      $.info(`步骤2: 设备映射 deviceName→deviceCode=${deviceCode ?? "<未匹配>"}`);
+      if (!deviceCode) throw new Error(`未找到设备名称对应的deviceCode: ${deviceName}`);
 
-    // 3) 读取已保存的 accessToken
-    let accessToken = $.read("#zhuzher_access_token");
-    const refreshToken = $.read("#zhuzher_refresh_token");
+      // 3) 读取已保存的 accessToken/refreshToken
+      let accessToken = $.read("#zhuzher_access_token");
+      const refreshToken = $.read("#zhuzher_refresh_token");
+      $.info(
+        `步骤3: Token状态 accessToken=${maskToken(accessToken)} refreshToken=${maskToken(refreshToken)}`
+      );
 
-    if (!accessToken && !refreshToken) {
-      throw new Error("未找到token，请先登录住这儿APP触发拦截");
+      if (!accessToken && !refreshToken) {
+        throw new Error("未找到token，请先登录住这儿APP触发拦截");
+      }
+
+      // 4) 构建授权头
+      let headers = { ...CONFIG.headers };
+      if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
+      $.info(`步骤4: 请求头构建 -> ${stringifyHeaders(headers)}`);
+
+      // 5) 发送开门请求，如401则刷新token后重试
+      const requestBody = { device_code: deviceCode };
+      const body = JSON.stringify(requestBody);
+      $.info(`步骤5: 开门请求 URL=${CONFIG.openDoorApi}`);
+      $.info(`步骤5: 开门请求 Body=${body}`);
+
+      const openStart = Date.now();
+      let resp = await $.http.post({ url: CONFIG.openDoorApi, headers, body });
+      const openElapsed = Date.now() - openStart;
+      $.info(`步骤5: 开门响应 status=${resp.statusCode ?? resp.status} 耗时=${openElapsed}ms`);
+      $.info(`步骤5: 开门响应 Headers=${safeString(resp.headers)}`);
+      $.info(`步骤5: 开门响应 BodyLen=${resp.body ? resp.body.length : 0}`);
+
+      let data = safeJSON(resp.body);
+      if (!data || data.code === 401) {
+        $.info(`步骤6: 授权失败或过期 code=${data ? data.code : "<解析失败>"}，尝试刷新token...`);
+        const refreshStart = Date.now();
+        const refreshed = await refreshAccessToken();
+        const refreshElapsed = Date.now() - refreshStart;
+        $.info(`步骤6: 刷新token结果 refreshed=${refreshed} 耗时=${refreshElapsed}ms`);
+        if (!refreshed) throw new Error("刷新token失败");
+
+        accessToken = $.read("#zhuzher_access_token");
+        headers = { ...CONFIG.headers, Authorization: `Bearer ${accessToken}` };
+        $.info(`步骤6: 刷新后Authorization=${maskToken(accessToken)}`);
+
+        const retryStart = Date.now();
+        resp = await $.http.post({ url: CONFIG.openDoorApi, headers, body });
+        const retryElapsed = Date.now() - retryStart;
+        $.info(`步骤6: 重试开门响应 status=${resp.statusCode ?? resp.status} 耗时=${retryElapsed}ms`);
+        $.info(`步骤6: 重试开门响应 Headers=${safeString(resp.headers)}`);
+        $.info(`步骤6: 重试开门响应 BodyLen=${resp.body ? resp.body.length : 0}`);
+        data = safeJSON(resp.body);
+      }
+
+      if (data && data.code === 200) {
+        $.notify(
+          "住这儿开门成功",
+          deviceName,
+          `设备编码: ${deviceCode}\n时间: ${new Date().toLocaleString()}`
+        );
+        $.info(`✅ 开门成功，服务返回: ${safeString(data)}`);
+      } else {
+        const msg = (data && data.message) || "开门失败";
+        $.notify("住这儿开门失败", deviceName, `${msg}`);
+        $.error(`❌ 开门失败 code=${data ? data.code : "<未知>"} msg=${msg}`);
+        $.info(`失败响应体: ${typeof resp.body === "string" ? resp.body.slice(0, 500) : safeString(resp.body)}`);
+      }
+
+      const scriptElapsed = Date.now() - scriptStart;
+      $.info(`================== 开门脚本结束 总耗时=${scriptElapsed}ms ==================`);
+      $.done();
+    } catch (err) {
+      $.error(`❌ 执行错误: ${err.message}`);
+      $.info(err.stack || "<no stack>");
+      $.notify("住这儿自动开门", "脚本错误", err.message);
+      const scriptElapsed = Date.now() - scriptStart;
+      $.info(`================== 脚本异常结束 总耗时=${scriptElapsed}ms ==================`);
+      $.done();
     }
-
-    // 4) 授权头
-    let headers = { ...CONFIG.headers };
-    if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
-
-    // 5) 尝试开门，如401则尝试刷新token后重试
-    const body = JSON.stringify({ device_code: deviceCode });
-    let resp = await $.http.post({ url: CONFIG.openDoorApi, headers, body });
-
-    let data = safeJSON(resp.body);
-    if (!data || data.code === 401) {
-      $.info("授权失败或过期，尝试刷新token...");
-      const refreshed = await refreshAccessToken();
-      if (!refreshed) throw new Error("刷新token失败");
-
-      accessToken = $.read("#zhuzher_access_token");
-      headers = { ...CONFIG.headers, Authorization: `Bearer ${accessToken}` };
-      resp = await $.http.post({ url: CONFIG.openDoorApi, headers, body });
-      data = safeJSON(resp.body);
-    }
-
-    if (data && data.code === 200) {
-      $.notify("住这儿开门成功", deviceName, `设备编码: ${deviceCode}\n时间: ${new Date().toLocaleString()}`);
-      $.info("✅ 开门成功");
-    } else {
-      const msg = (data && data.message) || "开门失败";
-      $.notify("住这儿开门失败", deviceName, `${msg}`);
-      $.error(`❌ 开门失败: ${msg}`);
-    }
-
-    $.done();
-  } catch (err) {
-    $.error(`❌ 执行错误: ${err.message}`);
-    $.notify("住这儿自动开门", "脚本错误", err.message);
-    $.done();
-  }
+  })();
 })();
 
 function mapDevice(name) {
-  if (!name) return null;
-  const item = DEVICE_MAP.find((d) => d.deviceName === name);
-  return item ? item.deviceCode : null;
+  $.info(`mapDevice: 输入名称='${name}' 映射表条目=${DEVICE_MAP.length}`);
+  if (!name) {
+    $.info("mapDevice: 名称为空，返回null");
+    return null;
+  }
+  const candidates = DEVICE_MAP.filter(d => d.deviceName === name);
+  $.info(`mapDevice: 命中条目数=${candidates.length}`);
+  if (candidates.length === 0) return null;
+  const picked = candidates[0];
+  $.info(`mapDevice: 选用 deviceCode='${picked.deviceCode}' deviceId='${picked.deviceId}'`);
+  return picked.deviceCode;
 }
 
 async function refreshAccessToken() {
   // 说明：接口细节在文档中，通常需要refreshToken或用户凭据；这里采用已拦截数据结构
   const refreshToken = $.read("#zhuzher_refresh_token");
+  $.info(`refreshAccessToken: 读取refreshToken=${maskToken(refreshToken)}`);
   if (!refreshToken) return false;
 
   try {
+    const payload = { refreshToken };
+    $.info(`refreshAccessToken: 请求 URL=${CONFIG.tokenRefreshApi}`);
+    $.info(`refreshAccessToken: 请求 Body=${safeString(payload)}`);
+    const start = Date.now();
     const resp = await $.http.post({
       url: CONFIG.tokenRefreshApi,
       headers: { ...CONFIG.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken }),
+      body: JSON.stringify(payload),
     });
+    const elapsed = Date.now() - start;
+    $.info(`refreshAccessToken: 响应 status=${resp.statusCode ?? resp.status} 耗时=${elapsed}ms`);
+    $.info(`refreshAccessToken: 响应 Headers=${safeString(resp.headers)}`);
+    $.info(`refreshAccessToken: 响应 BodyLen=${resp.body ? resp.body.length : 0}`);
+
     const data = safeJSON(resp.body);
     if (data && data.code === 200 && data.result && data.result.accessToken) {
       $.write(data.result.accessToken, "#zhuzher_access_token");
       if (data.result.refreshToken) $.write(data.result.refreshToken, "#zhuzher_refresh_token");
       if (data.result.userID) $.write(data.result.userID, "#zhuzher_user_id");
-      $.info("✅ 刷新token成功");
+      $.info(
+        `refreshAccessToken: 刷新成功 accessToken=${maskToken(data.result.accessToken)} userID=${data.result.userID ?? "<未知>"}`
+      );
       return true;
     }
-    $.error(`刷新失败: ${data ? data.message : "未知"}`);
+    $.error(`refreshAccessToken: 刷新失败 code=${data ? data.code : "<解析失败>"} msg=${data ? data.message : "<无>"}`);
+    $.info(`refreshAccessToken: 失败响应体预览=${typeof resp.body === "string" ? resp.body.slice(0, 500) : safeString(resp.body)}`);
     return false;
   } catch (e) {
-    $.error(`刷新请求异常: ${e.message}`);
+    $.error(`refreshAccessToken: 请求异常 ${e.message}`);
+    $.info(e.stack || "<no stack>");
     return false;
   }
 }
 
 function safeJSON(text) {
-  try { return JSON.parse(text); } catch { return null; }
+  try {
+    const parsed = JSON.parse(text);
+    return parsed;
+  } catch (e) {
+    $.info(`safeJSON: JSON解析失败 ${e.message} 源预览='${typeof text === "string" ? text.slice(0, 300) : safeString(text)}'`);
+    return null;
+  }
 }
 
 function getArg(key) {
   // QuantumultX 通过 $request / $arguments 传参，兼容多场景
+  // 日志：记录来源与值
   if (typeof $request !== "undefined") {
     const url = $request.url || "";
+    $.info(`getArg: 在$request.url中查找 ${key}，url='${url.slice(0, 200)}'...`);
     const m = url.match(new RegExp(`${key}=([^&]+)`));
-    return m ? decodeURIComponent(m[1]) : null;
+    const val = m ? decodeURIComponent(m[1]) : null;
+    $.info(`getArg: 来源=$request, key='${key}', value='${val}'`);
+    return val;
   }
   if (typeof $arguments !== "undefined") {
-    return $arguments[key] || null;
+    const val = $arguments[key] || null;
+    $.info(`getArg: 来源=$arguments, key='${key}', value='${val}'`);
+    return val;
   }
+  $.info(`getArg: 未检测到$request/$arguments, key='${key}'`);
   return null;
+}
+
+// 工具：打码敏感token
+function maskToken(t) {
+  if (!t || typeof t !== "string") return "<空>";
+  if (t.length <= 8) return `${t.slice(0, 4)}***`;
+  return `${t.slice(0, 6)}***${t.slice(-4)}`;
+}
+
+// 工具：安全字符串化，避免循环与超长
+function safeString(obj) {
+  try {
+    const s = typeof obj === "string" ? obj : JSON.stringify(obj);
+    return s.length > 800 ? s.slice(0, 800) + "...<truncated>" : s;
+  } catch {
+    return "<unserializable>";
+  }
+}
+
+// 工具：格式化输出请求头（Authorization打码）
+function stringifyHeaders(h) {
+  const copy = { ...(h || {}) };
+  if (copy.Authorization) copy.Authorization = `Bearer ${maskToken(copy.Authorization.replace(/^Bearer\s+/, ""))}`;
+  return safeString(copy);
 }
 
 // prettier-ignore
