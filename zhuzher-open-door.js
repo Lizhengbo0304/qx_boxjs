@@ -27,7 +27,23 @@ const DEVICE_MAP = [
 const CONFIG = {
   tokenRefreshApi: "https://api.5th.zone/auth/v3/external/oauth/accessToken",
   openDoorApi: "https://api.5th.zone/p/chaos/fd/api/entrance/v1/easygo/open",
-  headers: {  },
+  headers: {
+    Host: "api.5th.zone",
+    "Zhuzher-Project-Code": "37010105",
+    "Content-Type": "application/json",
+    Accept: "*/*",
+    "Zhuzher-Street-Code": "370102016000",
+    "X-Version": "6.0.10",
+    "Accept-Language": "zh-Hans-CN;q=1, en-CN;q=0.9",
+    "X-API-Version": "20251030",
+    "Accept-Encoding": "gzip, deflate, br",
+    "User-Agent": "VKProprietorAssistant/6.0.10 (iPhone; iOS 18.7.1; Scale/3.00)",
+    "X-Device-ID": "41052EC8-CAD1-47AB-9D43-BC1043267157",
+    "X-Platform": "iOS",
+    Connection: "keep-alive",
+    "X-channel": "zhuzher",
+    "Zhuzher-Project-Role": "6",
+  },
 };
 
 (function main() {
@@ -55,6 +71,9 @@ const CONFIG = {
       const requestBody = { device_code: deviceCode };
       const body = JSON.stringify(requestBody);
 
+      // 简洁请求日志
+      $.info(`准备开门: deviceName=${deviceName || "<未提供>"} deviceCode=${deviceCode}`);
+
       let resp = await $.http.post({ url: CONFIG.openDoorApi, headers, body });
       let data = safeJSON(resp.body);
       if (!data || data.code === 401) {
@@ -62,6 +81,7 @@ const CONFIG = {
         if (!refreshed) throw new Error("刷新token失败");
         accessToken = $.read("#zhuzher_access_token");
         headers = { ...CONFIG.headers, Authorization: `Bearer ${accessToken}` };
+        $.info("授权过期，刷新token后重试");
         resp = await $.http.post({ url: CONFIG.openDoorApi, headers, body });
         data = safeJSON(resp.body);
       }
