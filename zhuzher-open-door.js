@@ -216,7 +216,7 @@ function safeJSON(text) {
 }
 
 function getArg(key) {
-  // 统一参数解析：支持 $request.url、$arguments(Object/String)、$argument(String)、Node argv/env
+  // 统一参数解析：支持 $request.url、$arguments(Object/String)、$argument(String)、$shortcut(String/Object)、$context.query/$context.input、Node argv/env
   // 并记录详细日志，便于排查不同运行场景
   
   // 1) 从 $request.url 解析（Rewrite 场景）
@@ -229,30 +229,156 @@ function getArg(key) {
     if (val !== null) return val;
   }
 
-  // 2) 从 $arguments（Quantumult X 定时任务的 argument）
+  // 2) 从 $arguments（Quantumult X 定时任务的 argument / URL Scheme 的 param 被映射到此）
   if (typeof $arguments !== "undefined" && $arguments) {
     if (typeof $arguments === "string") {
-      // 兼容部分环境 $arguments 传为查询串
-      const parsed = qsToObj($arguments);
-      const val = parsed[key] || null;
-      $.info(`getArg: 来源=$arguments(string), key='${key}', value='${val}' 原始='${$arguments}'`);
+      // 兼容部分环境 $arguments 传为查询串或 JSON
+      let val = null;
+      try {
+        const maybeJson = JSON.parse($arguments);
+        val = maybeJson && maybeJson[key] != null ? `${maybeJson[key]}` : null;
+        $.info(`getArg: 来源=$arguments(JSON-string), key='${key}', value='${val}' 原始长度=${$arguments.length}`);
+      } catch {
+        const parsed = qsToObj($arguments);
+        val = parsed[key] || null;
+        // 同时兼容常见的 param / argument 字段
+        if (val === null && (parsed.param || parsed.argument)) {
+          const nested = qsToObj(parsed.param || parsed.argument);
+          val = nested[key] || null;
+        }
+        $.info(`getArg: 来源=$arguments(qs-string), key='${key}', value='${val}' 原始='${$arguments}'`);
+      }
       if (val !== null) return val;
-    } else {
-      const val = $arguments[key] || null;
+    } else if (typeof $arguments === "object") {
+      // 直接对象或包含 param/argument 子字段
+      let val = $arguments[key] != null ? `${$arguments[key]}` : null;
+      if (val === null) {
+        const holder = $arguments.param || $arguments.argument;
+        if (holder) {
+          if (typeof holder === "string") {
+            const parsed = qsToObj(holder);
+            val = parsed[key] || null;
+          } else if (typeof holder === "object") {
+            val = holder[key] != null ? `${holder[key]}` : null;
+          }
+        }
+      }
       $.info(`getArg: 来源=$arguments(object), key='${key}', value='${val}'`);
       if (val !== null) return val;
     }
   }
 
-  // 3) 从 $argument（Surge/Loon 或脚本路径带 ?a=b 传参）
+  // 3) 从 $shortcut（iPhone 快捷指令通过 Quantumult X 传参）
+  if (typeof $shortcut !== "undefined" && $shortcut) {
+    let val = null;
+    if (typeof $shortcut === "string") {
+      // 尝试按 JSON 或查询串解析
+      try {
+        const maybeJson = JSON.parse($shortcut);
+        val = maybeJson && maybeJson[key] != null ? `${maybeJson[key]}` : null;
+        $.info(`getArg: 来源=$shortcut(JSON-string), key='${key}', value='${val}' 原始长度=${$shortcut.length}`);
+      } catch {
+        const parsed = qsToObj($shortcut);
+        val = parsed[key] || null;
+        $.info(`getArg: 来源=$shortcut(qs-string), key='${key}', value='${val}' 原始='${$shortcut}'`);
+      }
+      if (val !== null) return val;
+    } else if (typeof $shortcut === "object") {
+      // 常见字段：input/text/value/url/dict/param/argument
+      const candidates = [
+        $shortcut[key],
+        $shortcut.input,
+        $shortcut.text,
+        $shortcut.value,
+        $shortcut.url,
+        $shortcut.dict,
+        $shortcut.param,
+        $shortcut.argument
+      ];
+      for (const c of candidates) {
+        if (typeof c === "string") {
+          // 进一步按 JSON 或查询串解析
+          try {
+            const maybeJson = JSON.parse(c);
+            val = maybeJson && (maybeJson[key] != null ? `${maybeJson[key]}` : null);
+            $.info(`getArg: 来源=$shortcut(object).string(JSON), key='${key}', value='${val}'`);
+          } catch {
+            const parsed = qsToObj(c);
+            val = parsed[key] || null;
+            // 支持内嵌 param/argument 再解析
+            if (val === null && (parsed.param || parsed.argument)) {
+              const nested = qsToObj(parsed.param || parsed.argument);
+              val = nested[key] || null;
+            }
+            $.info(`getArg: 来源=$shortcut(object).string(qs), key='${key}', value='${val}'`);
+          }
+          if (val !== null) return val;
+        } else if (typeof c === "object" && c) {
+          val = c[key] != null ? `${c[key]}` : null;
+          if (val === null && (c.param || c.argument)) {
+            const nested = c.param || c.argument;
+            if (typeof nested === "string") {
+              const parsed = qsToObj(nested);
+              val = parsed[key] || null;
+            } else if (typeof nested === "object") {
+              val = nested[key] != null ? `${nested[key]}` : null;
+            }
+          }
+          $.info(`getArg: 来源=$shortcut(object).object, key='${key}', value='${val}'`);
+          if (val !== null) return val;
+        }
+      }
+    }
+  }
+
+  // 4) 从 $argument（Surge/Loon 或脚本路径带 ?a=b 传参）
   if (typeof $argument !== "undefined" && $argument) {
-    const parsed = qsToObj($argument);
-    const val = parsed[key] || null;
-    $.info(`getArg: 来源=$argument, key='${key}', value='${val}' 原始='${$argument}'`);
+    let val = null;
+    // 兼容 JSON 或查询串
+    try {
+      const maybeJson = JSON.parse($argument);
+      val = maybeJson && maybeJson[key] != null ? `${maybeJson[key]}` : null;
+      $.info(`getArg: 来源=$argument(JSON-string), key='${key}', value='${val}' 原始长度=${$argument.length}`);
+    } catch {
+      const parsed = qsToObj($argument);
+      val = parsed[key] || null;
+      $.info(`getArg: 来源=$argument(qs-string), key='${key}', value='${val}' 原始='${$argument}'`);
+    }
     if (val !== null) return val;
   }
 
-  // 4) Node 环境：支持命令行参数与环境变量
+  // 5) Quantumult X URL Scheme 或上下文：$context.query / $context.input / $context.link
+  if (typeof $context !== "undefined" && $context) {
+    const parts = [];
+    if (typeof $context.query === "string") parts.push($context.query);
+    if (typeof $context.input === "string") parts.push($context.input);
+    if (typeof $context.link === "string") {
+      const link = $context.link;
+      const idx = link.indexOf("?");
+      if (idx >= 0) parts.push(link.slice(idx + 1));
+    }
+    $.info(`getArg: 检查$context，parts数量=${parts.length}`);
+    for (const p of parts) {
+      let val = null;
+      try {
+        const maybeJson = JSON.parse(p);
+        val = maybeJson && maybeJson[key] != null ? `${maybeJson[key]}` : null;
+        $.info(`getArg: 来源=$context(JSON-string), key='${key}', value='${val}'`);
+      } catch {
+        const parsed = qsToObj(p);
+        val = parsed[key] || null;
+        // 支持内嵌 param/argument 再解析
+        if (val === null && (parsed.param || parsed.argument)) {
+          const nested = qsToObj(parsed.param || parsed.argument);
+          val = nested[key] || null;
+        }
+        $.info(`getArg: 来源=$context(qs-string), key='${key}', value='${val}' 原始='${p}'`);
+      }
+      if (val !== null) return val;
+    }
+  }
+
+  // 6) Node 环境：支持命令行参数与环境变量
   try {
     const env = ENV();
     if (env && env.isNode) {
@@ -271,6 +397,66 @@ function getArg(key) {
     }
   } catch (e) {
     $.info(`getArg: Node参数解析异常 ${e.message}`);
+  }
+
+  // 7) 兜底：扫描全局对象可能的字符串或对象字段中携带的 deviceName
+  try {
+    const g = typeof globalThis !== "undefined" ? globalThis : (typeof this !== "undefined" ? this : {});
+    const names = Object.getOwnPropertyNames(g);
+    $.info(`getArg: 全局兜底扫描，共有全局属性=${names.length}`);
+    for (const n of names) {
+      const v = g[n];
+      if (typeof v === "string") {
+        // 直接包含 deviceName=xxx 或 JSON {"deviceName":"..."}
+        const m1 = v.match(/(?:^|[?&])deviceName=([^&\s]+)/);
+        if (m1) {
+          const val = decodeURIComponent(m1[1].replace(/\+/g, "%20"));
+          $.info(`getArg: 来源=globalThis.${n}(string.qs), key='${key}', value='${val}'`);
+          return val;
+        }
+        try {
+          const j = JSON.parse(v);
+          if (j && j[key] != null) {
+            const val = `${j[key]}`;
+            $.info(`getArg: 来源=globalThis.${n}(string.JSON), key='${key}', value='${val}'`);
+            return val;
+          }
+        } catch {}
+      } else if (v && typeof v === "object") {
+        if (v[key] != null) {
+          const val = `${v[key]}`;
+          $.info(`getArg: 来源=globalThis.${n}(object), key='${key}', value='${val}'`);
+          return val;
+        }
+        // 尝试 param/argument 子字段
+        const holder = v.param || v.argument;
+        if (holder) {
+          if (typeof holder === "string") {
+            const parsed = qsToObj(holder);
+            const val = parsed[key] || null;
+            if (val !== null) {
+              $.info(`getArg: 来源=globalThis.${n}(object.param-string), key='${key}', value='${val}'`);
+              return val;
+            }
+          } else if (typeof holder === "object") {
+            if (holder[key] != null) {
+              const val = `${holder[key]}`;
+              $.info(`getArg: 来源=globalThis.${n}(object.param-object), key='${key}', value='${val}'`);
+              return val;
+            }
+          }
+        }
+      }
+    }
+  } catch (e) {
+    $.info(`getArg: 全局兜底扫描异常 ${e.message}`);
+  }
+
+  // 8) 最后回退：读取持久化键（允许快捷指令先写入）
+  const persisted = $.read("#zhuzher_device_name");
+  if (persisted) {
+    $.info(`getArg: 来源=persisted('#zhuzher_device_name'), key='${key}', value='${persisted}'`);
+    return persisted;
   }
 
   $.info(`getArg: 未检测到可用来源, key='${key}'`);
