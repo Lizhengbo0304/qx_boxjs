@@ -216,23 +216,81 @@ function safeJSON(text) {
 }
 
 function getArg(key) {
-  // QuantumultX 通过 $request / $arguments 传参，兼容多场景
-  // 日志：记录来源与值
-  if (typeof $request !== "undefined") {
+  // 统一参数解析：支持 $request.url、$arguments(Object/String)、$argument(String)、Node argv/env
+  // 并记录详细日志，便于排查不同运行场景
+  
+  // 1) 从 $request.url 解析（Rewrite 场景）
+  if (typeof $request !== "undefined" && $request && typeof $request.url === "string") {
     const url = $request.url || "";
     $.info(`getArg: 在$request.url中查找 ${key}，url='${url.slice(0, 200)}'...`);
     const m = url.match(new RegExp(`${key}=([^&]+)`));
-    const val = m ? decodeURIComponent(m[1]) : null;
+    const val = m ? decodeURIComponent(m[1].replace(/\+/g, "%20")) : null;
     $.info(`getArg: 来源=$request, key='${key}', value='${val}'`);
-    return val;
+    if (val !== null) return val;
   }
-  if (typeof $arguments !== "undefined") {
-    const val = $arguments[key] || null;
-    $.info(`getArg: 来源=$arguments, key='${key}', value='${val}'`);
-    return val;
+
+  // 2) 从 $arguments（Quantumult X 定时任务的 argument）
+  if (typeof $arguments !== "undefined" && $arguments) {
+    if (typeof $arguments === "string") {
+      // 兼容部分环境 $arguments 传为查询串
+      const parsed = qsToObj($arguments);
+      const val = parsed[key] || null;
+      $.info(`getArg: 来源=$arguments(string), key='${key}', value='${val}' 原始='${$arguments}'`);
+      if (val !== null) return val;
+    } else {
+      const val = $arguments[key] || null;
+      $.info(`getArg: 来源=$arguments(object), key='${key}', value='${val}'`);
+      if (val !== null) return val;
+    }
   }
-  $.info(`getArg: 未检测到$request/$arguments, key='${key}'`);
+
+  // 3) 从 $argument（Surge/Loon 或脚本路径带 ?a=b 传参）
+  if (typeof $argument !== "undefined" && $argument) {
+    const parsed = qsToObj($argument);
+    const val = parsed[key] || null;
+    $.info(`getArg: 来源=$argument, key='${key}', value='${val}' 原始='${$argument}'`);
+    if (val !== null) return val;
+  }
+
+  // 4) Node 环境：支持命令行参数与环境变量
+  try {
+    const env = ENV();
+    if (env && env.isNode) {
+      const argv = (typeof process !== "undefined" && process.argv) ? process.argv.join(" ") : "";
+      const fromArgv = (() => {
+        const m = argv.match(new RegExp(`(?:--|)${key}=?([^\s]+)`));
+        return m ? decodeURIComponent(m[1].replace(/\+/g, "%20")) : null;
+      })();
+      if (fromArgv) {
+        $.info(`getArg: 来源=process.argv, key='${key}', value='${fromArgv}'`);
+        return fromArgv;
+      }
+      const fromEnv = (typeof process !== "undefined" && process.env) ? process.env[key] || null : null;
+      $.info(`getArg: 来源=process.env, key='${key}', value='${fromEnv}'`);
+      if (fromEnv !== null) return fromEnv;
+    }
+  } catch (e) {
+    $.info(`getArg: Node参数解析异常 ${e.message}`);
+  }
+
+  $.info(`getArg: 未检测到可用来源, key='${key}'`);
   return null;
+}
+
+// 简易查询串解析工具：支持 'a=b&c=d'，处理 + 空格与 decode
+function qsToObj(qs) {
+  const out = {};
+  if (!qs || typeof qs !== "string") return out;
+  try {
+    qs.split("&").forEach(pair => {
+      const [k, v] = pair.split("=");
+      if (!k) return;
+      out[decodeURIComponent(k)] = v ? decodeURIComponent(v.replace(/\+/g, "%20")) : "";
+    });
+  } catch (e) {
+    $.info(`qsToObj: 解析失败 ${e.message} 原始='${qs.slice(0, 200)}'`);
+  }
+  return out;
 }
 
 // 工具：打码敏感token
