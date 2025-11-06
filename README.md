@@ -1,5 +1,5 @@
 **仓库简介**
-- Quantumult X / BoxJS 自用脚本合集，涵盖彩云天气、自动定位、住这儿助手（自动开门与 Token 拦截）以及咔皮记账响应改写。
+- Quantumult X / BoxJS 自用脚本合集，涵盖彩云天气、自动定位、住这儿助手（自动开门与 Token 拦截）以及**记账响应改写。
 - 目标：通过重写与脚本自动化获取位置、通知天气、拦截并保存令牌、执行便捷动作；配套 BoxJS 订阅用于可视化配置与持久化变量。
 
 **环境要求**
@@ -11,7 +11,7 @@
 - `locate.js`：通过系统天气接口自动解析经纬度并持久化，可供其他脚本复用。
 - `zhuzher-token-intercept.js`：拦截住这儿 APP 登录/OAuth 刷新接口响应，自动保存 Token 到 BoxJS。
 - `zhuzher-open-door.js`：住这儿自动开门脚本，支持按设备名称触发，自动刷新 Token，日志增强。
-- `kapi-accounting.js`：咔皮记账接口响应改写示例（学习用途）。
+- `kapi-accounting.js`：**记账接口响应改写示例（学习用途）。
 - `quanx.conf`：Quantumult X 重写订阅示例（含 MITM/重写/任务说明）。
 - `box.jx.json`：BoxJS 应用订阅定义（彩云天气、住这儿助手）。
 
@@ -26,14 +26,14 @@
 - MITM 主机名（按脚本需求汇总）：
   - `restapi.amap.com`（彩云）
   - `api.5th.zone`（住这儿）
-  - `api.heylumi.cn`（咔皮记账）
+  - `api.heylumi.cn`（**记账）
   - 运行自动定位请同时添加：`weatherkit.apple.com`, `api.weather.com`
 - 重写规则（示例已内置在 `quanx.conf`）：
   - 彩云天气：`https://restapi.amap.com/v3/geocode/geo` → `script-request-header` → `caiyun.js`
   - 住这儿 Token 拦截：
     - `https://api.5th.zone/auth/v3/external/oauth/accessToken` → `script-response-body`
     - `https://api.5th.zone/linksail/api/mobile/login` → `script-response-body`
-  - 咔皮记账：`api.heylumi.cn` 下的用户配置、应用配置、账户状态接口 → `script-response-body`
+  - **记账：`api.heylumi.cn` 下的用户配置、应用配置、账户状态接口 → `script-response-body`
 - 任务说明：当前脚本均为自动触发型；如需定时/手动任务，可在 `[task_local]` 中自行添加运行条目。
 
 **BoxJS 订阅**
@@ -68,7 +68,7 @@
   - 设备映射：脚本内置常用门禁设备名称到编码的映射，可直接使用中文名称触发。
 
 - `kapi-accounting.js`
-  - 作用：拦截并改写咔皮记账相关接口响应（示例：会员等级改 VIP、应用配置设为 999 等）。
+  - 作用：拦截并改写**记账相关接口响应（示例：会员等级改 VIP、应用配置设为 999 等）。
   - 触发：`script-response-body`；MITM：`api.heylumi.cn`。
   - 说明：仅供学习与调试示例，请勿用于违反服务条款的用途。
 

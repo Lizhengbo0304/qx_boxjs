@@ -1,5 +1,5 @@
 /**
- * 咔皮记账 QuantumultX 脚本
+ * **记账 QuantumultX 脚本
  * @author: lizhengbo
  * 更新地址：https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/kapi-accounting.js
  * 
@@ -17,7 +17,7 @@
  * ^https:\/\/api\.heylumi\.cn\/note\/note-api\/common\/app\/config\/list url script-response-body https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/kapi-accounting.js
  * ^https:\/\/api\.heylumi\.cn\/note\/note-api\/user\/account\/status url script-response-body https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/kapi-accounting.js
  * 
- * 注意：此脚本会自动拦截咔皮记账的API响应并修改数据，无需额外配置。
+ * 注意：此脚本会自动拦截**记账的API响应并修改数据，无需额外配置。
  */
 
 const url = $request.url;
