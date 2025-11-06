@@ -64,6 +64,7 @@
       "author": "@lizhengbo",
       "repo": "https://github.com/Lizhengbo0304/qx_boxjs",
       "icons": [
+        "https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/Icon/zhuzher.png",
         "https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/Icon/zhuzher.png"
       ],
       "script": "https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/zhuzher-open-door.js"
