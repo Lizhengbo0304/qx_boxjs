@@ -2,7 +2,7 @@
   "id": "lizhengbo.caiyun.sub",
   "name": "李正博 自用应用订阅",
   "author": "@lizhengbo",
-  "icon": "https://avatars2.githubusercontent.com/u/21050064?s=460&u=40a74913dd0a3d00670d05148c3a08c787470021&v=4",
+  "icon": "https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/Icon/lizhengbo.png",
   "repo": "https://github.com/lizhengbo0304/qx_boxjs",
   "apps": [
     {
@@ -25,8 +25,8 @@
       "author": "@lizhengbo",
       "repo": "https://github.com/Lizhengbo0304/qx_boxjs",
       "icons": [
-        "https://raw.githubusercontent.com/Orz-3/mini/master/caiyun.png",
-        "https://raw.githubusercontent.com/Orz-3/task/master/caiyun.png"
+        "https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/Icon/caiyun.png",
+        "https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/Icon/caiyun.png"
       ],
       "script": "https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/caiyun.js"
     },
@@ -64,7 +64,7 @@
       "author": "@lizhengbo",
       "repo": "https://github.com/Lizhengbo0304/qx_boxjs",
       "icons": [
-        "https://raw.githubusercontent.com/Orz-3/mini/master/Color/zhuzher.png"
+        "https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/Icon/zhuzher.png"
       ],
       "script": "https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/zhuzher-open-door.js"
     }
