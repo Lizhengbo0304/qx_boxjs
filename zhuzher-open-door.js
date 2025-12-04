@@ -51,6 +51,12 @@ const CONFIG = {
   (async () => {
     try {
       const deviceName = getArg("deviceName");
+      const must = typeof $request !== "undefined" && $request && typeof $request.url === "string" && /(?:^|[?&])deviceName=/.test($request.url);
+      if (!must) { $.done(); return; }
+      const nowTs = Date.now();
+      const lastTs = parseInt($.read("#zhuzher_last_trigger_ts") || "0", 10);
+      if (lastTs && nowTs - lastTs < 2000) { $.info("短时间重复触发，忽略"); $.done(); return; }
+      $.write(String(nowTs), "#zhuzher_last_trigger_ts");
       const deviceCode = mapDevice(deviceName);
       if (!deviceCode) {
         $.notify("住这儿开门失败", deviceName || "<未提供>", "未找到匹配的设备编码");
