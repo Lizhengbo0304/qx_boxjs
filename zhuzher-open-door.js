@@ -52,10 +52,10 @@ const CONFIG = {
     try {
       const deviceName = getArg("deviceName");
       const must = typeof $request !== "undefined" && $request && typeof $request.url === "string" && /(?:^|[?&])deviceName=/.test($request.url);
-      if (!must) { $.done(); return; }
+      if (!must) { $done({ response: { status: 200, headers: { "Content-Type": "application/json" }, body: "{}" } }); return; }
       const nowTs = Date.now();
       const lastTs = parseInt($.read("#zhuzher_last_trigger_ts") || "0", 10);
-      if (lastTs && nowTs - lastTs < 2000) { $.info("短时间重复触发，忽略"); $.done(); return; }
+      if (lastTs && nowTs - lastTs < 2000) { $.info("短时间重复触发，忽略"); $done({ response: { status: 200, headers: { "Content-Type": "application/json" }, body: "{}" } }); return; }
       $.write(String(nowTs), "#zhuzher_last_trigger_ts");
       const deviceCode = mapDevice(deviceName);
       if (!deviceCode) {
@@ -99,12 +99,12 @@ const CONFIG = {
       }
 
       $.info("住这儿开门脚本结束");
-      $.done();
+      $done({ response: { status: 200, headers: { "Content-Type": "application/json" }, body: "{}" } });
     } catch (err) {
       $.error(err.message);
       $.notify("住这儿自动开门", "脚本错误", err.message);
       $.info("住这儿开门脚本结束");
-      $.done();
+      $done({ response: { status: 200, headers: { "Content-Type": "application/json" }, body: "{}" } });
     }
   })();
 })();

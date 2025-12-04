@@ -7,8 +7,5 @@ http-response ^https:\/\/api\.heylumi\.cn\/note\/note-api\/common\/app\/config\/
 http-response ^https:\/\/api\.heylumi\.cn\/note\/note-api\/user\/account\/status script-path=https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/kapi-accounting.js, requires-body=true, timeout=10, tag=Kapi-Account-Status
 http-request ^http:\/\/lizhengbo\.opendoor\.com\/\?deviceName=.+ script-path=https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/zhuzher-open-door.js, timeout=20, tag=Zhuzher-Shortcut-OpenDoor
 
-[Rewrite]
-^http:\/\/lizhengbo\.opendoor\.com\/\?deviceName=.+ url reject-dict
-
 [Mitm]
 hostname = restapi.amap.com, api.heylumi.cn, api.5th.zone
