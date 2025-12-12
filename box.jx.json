@@ -68,6 +68,61 @@
         "https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/Icon/zhuzher.png"
       ],
       "script": "https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/zhuzher-open-door.js"
+    },
+    {
+      "id": "WorkSignin",
+      "name": "企业微信签到",
+      "keys": [
+        "work_signin_is_workday",
+        "work_signin_is_leave",
+        "work_signin_morning_done",
+        "work_signin_evening_done",
+        "work_signin_qywx_key"
+      ],
+      "settings": [
+        {
+          "id": "work_signin_qywx_key",
+          "name": "企业微信 Webhook Key",
+          "val": "",
+          "type": "text",
+          "desc": "企业微信机器人 Webhook Key (必填)"
+        },
+        {
+          "id": "work_signin_is_leave",
+          "name": "今日请假",
+          "val": false,
+          "type": "boolean",
+          "desc": "开启后，今日将跳过签到"
+        },
+        {
+          "id": "work_signin_is_workday",
+          "name": "今日工作日 (自动更新)",
+          "val": false,
+          "type": "boolean",
+          "desc": "脚本自动检测，无需手动设置"
+        },
+        {
+          "id": "work_signin_morning_done",
+          "name": "上班已签到 (自动更新)",
+          "val": false,
+          "type": "boolean",
+          "desc": "脚本自动更新状态"
+        },
+        {
+          "id": "work_signin_evening_done",
+          "name": "下班已签到 (自动更新)",
+          "val": false,
+          "type": "boolean",
+          "desc": "脚本自动更新状态"
+        }
+      ],
+      "author": "@lizhengbo",
+      "repo": "https://github.com/Lizhengbo0304/qx_boxjs",
+      "icons": [
+        "https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/Icon/lizhengbo.png",
+        "https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/Icon/lizhengbo.png"
+      ],
+      "script": "https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/work_signin_check.js"
     }
   ]
 }
