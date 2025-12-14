@@ -64,8 +64,8 @@ if (typeof $request !== "undefined") {
   $.done({ body: $request.body });
 } else {
   // 非请求模式，检查配置
-  const token = $.read('token');
-  if (!token || !token.caiyun) {
+  const token = $.read('@caiyun.token.caiyun');
+  if (!token) {
     $.notify('[彩云天气]', '❌ 配置错误', '请在BoxJS中配置彩云天气API Token');
   } else {
     $.log('✅ 彩云天气配置正常，等待高德API调用触发');
@@ -111,14 +111,14 @@ async function processAmapResponse(url) {
     $.log(`📍 详细地址: ${formatted_address}`);
     
     // 检查彩云Token
-    const token = $.read('token');
-    if (!token || !token.caiyun) {
+    const token = $.read('@caiyun.token.caiyun');
+    if (!token) {
       $.notify('[彩云天气]', '❌ 未配置彩云Token', '请在BoxJS中配置彩云天气API Token');
       return;
     }
     
     // 调用彩云天气API
-    await getWeatherInfo(longitude, latitude, formatted_address, token.caiyun);
+    await getWeatherInfo(longitude, latitude, formatted_address, token);
     
   } catch (error) {
     $.error(`处理高德API响应失败: ${error.message}`);
