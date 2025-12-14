@@ -9,7 +9,8 @@
       "id": "Caiyun",
       "name": "彩云天气",
       "keys": [
-        "@caiyun.token.caiyun"
+        "@caiyun.token.caiyun",
+        "caiyun_qywx_key"
       ],
       "settings": [
         {
@@ -20,6 +21,13 @@
           "autoGrow": false,
           "rows": 2,
           "desc": "彩云天气的Token，用于获取天气信息。脚本会自动监控高德API调用并获取位置信息。"
+        },
+        {
+          "id": "caiyun_qywx_key",
+          "name": "企业微信 Webhook Key",
+          "val": "",
+          "type": "text",
+          "desc": "用于推送天气信息的企业微信机器人 Key (可选)"
         }
       ],
       "author": "@lizhengbo",
@@ -28,7 +36,7 @@
         "https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/Icon/caiyun.png",
         "https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/Icon/caiyun.png"
       ],
-      "script": "https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/caiyun.js"
+      "script": "https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/caiyun_qywx.js"
     },
     {
       "id": "Zhuzher",
