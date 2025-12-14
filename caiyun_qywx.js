@@ -41,8 +41,8 @@ if (typeof $request !== "undefined") {
   }
 } else {
   // 非请求模式，检查配置
-  const token = $.read('token');
-  if (!token || !token.caiyun) {
+  const token = $.read('@caiyun.token.caiyun');
+  if (!token) {
     $.notify('[彩云天气]', '❌ 配置错误', '请在BoxJS中配置彩云天气API Token');
   } else {
     $.log('✅ 彩云天气配置正常，等待高德API调用触发');
@@ -88,14 +88,14 @@ async function processAmapResponse(url) {
     $.log(`📍 详细地址: ${formatted_address}`);
     
     // 检查彩云Token
-    const token = $.read('token');
-    if (!token || !token.caiyun) {
+    const token = $.read('@caiyun.token.caiyun');
+    if (!token) {
       $.notify('[彩云天气]', '❌ 未配置彩云Token', '请在BoxJS中配置彩云天气API Token');
       return;
     }
     
     // 调用彩云天气API
-    await getWeatherInfo(longitude, latitude, formatted_address, token.caiyun);
+    await getWeatherInfo(longitude, latitude, formatted_address, token);
     
   } catch (error) {
     $.error(`处理高德API响应失败: ${error.message}`);
@@ -474,96 +474,41 @@ function MYERR() {
   };
 }
 
-/*********************************** API Helper *************************************/
+/*********************************** API Helper (Loon Only) *************************************/
 function API(name) {
     return new Env(name);
 }
 
 function Env(name) {
     this.name = name;
-    this.isNode = typeof require !== "undefined" && typeof module !== "undefined";
-    this.isQuanX = typeof $prefs !== "undefined";
-    this.isLoon = typeof $persistentStore !== "undefined";
-    this.isSurge = typeof $httpClient !== "undefined" && typeof $loon === "undefined";
-
     this.log = (msg) => console.log(`[${this.name}] ${msg}`);
     this.error = (msg) => console.log(`[${this.name}] ❌ ${msg}`);
-
-    this.notify = (title, subtitle, body) => {
-        if (this.isQuanX) $notify(title, subtitle, body);
-        if (this.isLoon || this.isSurge) $notification.post(title, subtitle, body);
-        if (this.isNode) console.log(`${title}\n${subtitle}\n${body}`);
-    };
+    this.notify = (title, subtitle, body) => $notification.post(title, subtitle, body);
 
     this.read = (key) => {
-        if (this.isQuanX) {
-            // BoxJS compatibility: BoxJS uses JSON strings for objects often, but here we expect basic read
-            // However, caiyun.js uses $.read('token') which implies it expects an object if 'token' stores JSON
-            // In the original script, it might be using a helper that parses JSON.
-            // Let's implement basic read and see.
-            // Actually, for BoxJS, usually data is stored as string.
-            // But caiyun.js usage: const token = $.read('token'); if (!token.caiyun) ...
-            // This implies $.read returns an object!
-            // So we need to try JSON.parse.
-            let val = $prefs.valueForKey(key);
-            try { return JSON.parse(val); } catch(e) { return val; }
-        }
-        if (this.isLoon || this.isSurge) {
-            let val = $persistentStore.read(key);
-            try { return JSON.parse(val); } catch(e) { return val; }
-        }
-        return null;
+        let val = $persistentStore.read(key);
+        try { return JSON.parse(val); } catch(e) { return val; }
     };
 
     this.write = (val, key) => {
         if (typeof val === 'object') val = JSON.stringify(val);
-        if (this.isQuanX) return $prefs.setValueForKey(val, key);
-        if (this.isLoon || this.isSurge) return $persistentStore.write(val, key);
-        return false;
+        return $persistentStore.write(val, key);
     };
 
-    this.done = (val) => {
-        if (this.isNode) return;
-        if (typeof $done !== "undefined") $done(val);
-    };
+    this.done = (val) => $done(val);
 
     this.http = {
-        get: (opts) => {
-            return new Promise((resolve, reject) => {
-                const method = "GET";
-                if (this.isQuanX) {
-                    opts.method = method;
-                    $task.fetch(opts).then(
-                        resp => resolve({ statusCode: resp.statusCode, headers: resp.headers, body: resp.body }),
-                        err => reject(err.error)
-                    );
-                } else if (this.isLoon || this.isSurge) {
-                    $httpClient.get(opts, (err, resp, body) => {
-                        if (err) reject(err);
-                        else resolve({ statusCode: resp.status || resp.statusCode, headers: resp.headers, body: body });
-                    });
-                } else if (this.isNode) {
-                    // Node polyfill not implemented
-                    reject("Node not supported");
-                }
+        get: (opts) => new Promise((resolve, reject) => {
+            $httpClient.get(opts, (err, resp, body) => {
+                if (err) reject(err);
+                else resolve({ statusCode: resp.status, headers: resp.headers, body });
             });
-        },
-        post: (opts) => {
-             return new Promise((resolve, reject) => {
-                const method = "POST";
-                if (this.isQuanX) {
-                    opts.method = method;
-                    $task.fetch(opts).then(
-                        resp => resolve({ statusCode: resp.statusCode, headers: resp.headers, body: resp.body }),
-                        err => reject(err.error)
-                    );
-                } else if (this.isLoon || this.isSurge) {
-                    $httpClient.post(opts, (err, resp, body) => {
-                        if (err) reject(err);
-                        else resolve({ statusCode: resp.status || resp.statusCode, headers: resp.headers, body: body });
-                    });
-                }
+        }),
+        post: (opts) => new Promise((resolve, reject) => {
+            $httpClient.post(opts, (err, resp, body) => {
+                if (err) reject(err);
+                else resolve({ statusCode: resp.status, headers: resp.headers, body });
             });
-        }
+        })
     };
 }

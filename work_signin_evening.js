@@ -96,61 +96,14 @@ async function sendSignInMessage(title, content) {
     });
 }
 
-// Env Helper
+// Env Helper (Loon Only)
 function Env(name) {
     this.name = name;
-    this.data = null;
-
-    this.isNode = typeof require !== "undefined" && typeof module !== "undefined";
-    this.isQuanX = typeof $prefs !== "undefined";
-    this.isLoon = typeof $persistentStore !== "undefined";
-    
     this.log = (msg) => console.log(`[${this.name}] ${msg}`);
-    
-    this.msg = (title, subtitle, body) => {
-        if (this.isQuanX) $notify(title, subtitle, body);
-        if (this.isLoon) $notification.post(title, subtitle, body);
-        if (this.isNode) console.log(`${title}\n${subtitle}\n${body}`);
-    };
-
-    this.getdata = (key) => {
-        if (this.isQuanX) return $prefs.valueForKey(key);
-        if (this.isLoon) return $persistentStore.read(key);
-        return null;
-    };
-
-    this.setdata = (val, key) => {
-        if (this.isQuanX) return $prefs.setValueForKey(val, key);
-        if (this.isLoon) return $persistentStore.write(val, key);
-        return false;
-    };
-
-    this.get = (options, callback) => {
-        if (this.isQuanX) {
-            if (typeof options === "string") options = { url: options };
-            options.method = "GET";
-            $task.fetch(options).then(resp => {
-                callback(null, resp, resp.body);
-            }, reason => callback(reason.error, null, null));
-        } else if (this.isLoon) {
-            $httpClient.get(options, callback);
-        }
-    };
-
-    this.post = (options, callback) => {
-        if (this.isQuanX) {
-            if (typeof options === "string") options = { url: options };
-            options.method = "POST";
-            $task.fetch(options).then(resp => {
-                callback(null, resp, resp.body);
-            }, reason => callback(reason.error, null, null));
-        } else if (this.isLoon) {
-            $httpClient.post(options, callback);
-        }
-    };
-
-    this.done = () => {
-        if (this.isNode) return;
-        if (typeof $done !== "undefined") $done({});
-    };
+    this.msg = (title, subtitle, body) => $notification.post(title, subtitle, body);
+    this.getdata = (key) => $persistentStore.read(key);
+    this.setdata = (val, key) => $persistentStore.write(val, key);
+    this.get = (options, callback) => $httpClient.get(options, callback);
+    this.post = (options, callback) => $httpClient.post(options, callback);
+    this.done = (val) => $done(val);
 }

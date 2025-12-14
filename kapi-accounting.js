@@ -1,5 +1,5 @@
 /**
- * **记账 QuantumultX 脚本
+ * **记账 Loon 脚本
  * @author: lizhengbo
  * 更新地址：https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/kapi-accounting.js
  * 
@@ -9,13 +9,13 @@
  * √ 拦截用户账户状态接口，修改会员等级为VIP
  * 
  * 配置：
- * 1️⃣ 在QuantumultX配置文件中添加以下配置
+ * 1️⃣ 在 Loon 插件或脚本配置中添加
  * [MITM]
  * hostname = api.heylumi.cn
- * [rewrite_local]
- * ^https:\/\/api\.heylumi\.cn\/note\/note-api\/settings\/profile\/get url script-response-body https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/kapi-accounting.js
- * ^https:\/\/api\.heylumi\.cn\/note\/note-api\/common\/app\/config\/list url script-response-body https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/kapi-accounting.js
- * ^https:\/\/api\.heylumi\.cn\/note\/note-api\/user\/account\/status url script-response-body https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/kapi-accounting.js
+ * [Script]
+ * http-response ^https:\/\/api\.heylumi\.cn\/note\/note-api\/settings\/profile\/get script-path=https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/kapi-accounting.js, requires-body=true, tag=Kapi-Profile-Get
+ * http-response ^https:\/\/api\.heylumi\.cn\/note\/note-api\/common\/app\/config\/list script-path=https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/kapi-accounting.js, requires-body=true, tag=Kapi-App-Config-List
+ * http-response ^https:\/\/api\.heylumi\.cn\/note\/note-api\/user\/account\/status script-path=https://raw.githubusercontent.com/Lizhengbo0304/qx_boxjs/refs/heads/main/kapi-accounting.js, requires-body=true, tag=Kapi-Account-Status
  * 
  * 注意：此脚本会自动拦截**记账的API响应并修改数据，无需额外配置。
  */
