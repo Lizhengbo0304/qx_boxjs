@@ -9,12 +9,12 @@
       "id": "Caiyun",
       "name": "彩云天气",
       "keys": [
-        "@caiyun.token.caiyun",
+        "caiyun_token",
         "caiyun_qywx_key"
       ],
       "settings": [
         {
-          "id": "@caiyun.token.caiyun",
+          "id": "caiyun_token",
           "name": "彩云天气API Token",
           "val": null,
           "type": "text",
